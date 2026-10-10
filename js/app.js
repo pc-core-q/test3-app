@@ -414,23 +414,17 @@ document.addEventListener("store:synced", function () {
   window.updateCartBadge();
 });
 // دالة تثبيت التطبيق المطورة - متوافقة 100% مع كافة أجهزة iPad و iPhone
+// دالة تثبيت التطبيق المضمونة - تعمل على جميع أجهزة الآيباد والآيفون حتى مع حماية الخصوصية
 function initInstallPrompt() {
-  // فحص هل تم رفض الإشعار مسبقاً
-  if (localStorage.getItem("dismiss_install_banner")) return;
-
-  // فحص هل التطبيق مفتوح بالفعل كـ تطبيق مستقل
-  const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
+  // فحص هل التطبيق مفتوح بالفعل كـ تطبيق مثبت
+  const isStandalone = window.matchMedia("(display-mode: standalone)").matches || 
+                       window.navigator.standalone === true;
   if (isStandalone) return;
 
-  const ua = window.navigator.userAgent.toLowerCase();
-  
-  // كشف قاطع لأجهزة Apple التي تدعم اللمس (يشمل iPad 9 وجميع الآيبادات والآيفونات)
-  const isAppleTouch = (/iphone|ipad|ipod/.test(ua)) || 
-                       (/macintosh/.test(ua) && (navigator.maxTouchPoints > 0 || 'ontouchend' in document));
-
   let deferredPrompt = null;
+  let isAndroidPromptReady = false;
 
-  // بناء شريط الإشعار السفلي
+  // 1. بناء شريط التثبيت السفلي
   const banner = document.createElement("div");
   banner.id = "pwaInstallBanner";
   banner.style.cssText = `
@@ -442,21 +436,21 @@ function initInstallPrompt() {
     margin: 0 auto;
     background: #ffffff;
     border: 1px solid #e2e8f0;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
     border-radius: 16px;
     padding: 12px 16px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    z-index: 99999;
+    z-index: 999999;
     direction: rtl;
     font-family: inherit;
   `;
 
   banner.innerHTML = `
     <div style="display: flex; align-items: center; gap: 12px;">
-      <img src="assets/logo/logo.png" style="width: 40px; height: 40px; border-radius: 10px; object-fit: contain;" alt="شعار">
+      <img src="assets/logo/logo.png" style="width: 42px; height: 42px; border-radius: 10px; object-fit: contain;" alt="شعار">
       <div>
         <div style="font-weight: 700; font-size: 14px; color: #1e293b;">تطبيق المتجر</div>
         <div style="font-size: 12px; color: #64748b;">تصفح أسرع وتجربة تطبيق متكاملة</div>
@@ -466,7 +460,7 @@ function initInstallPrompt() {
       <button id="pwaInstallBtn" style="background: #1d2f57; color: #fff; border: none; padding: 8px 16px; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer;">
         تحميل
       </button>
-      <button id="pwaCloseBtn" style="background: transparent; border: none; color: #94a3b8; font-size: 20px; cursor: pointer; line-height: 1;">
+      <button id="pwaCloseBtn" style="background: transparent; border: none; color: #94a3b8; font-size: 22px; cursor: pointer; line-height: 1;">
         &times;
       </button>
     </div>
@@ -477,34 +471,34 @@ function initInstallPrompt() {
     localStorage.setItem("dismiss_install_banner", Date.now());
   }
 
-  // نافذة الإرشادات لأجهزة آبل
-  function showIosGuideModal() {
-    const isIpad = (navigator.maxTouchPoints > 1 || /ipad/.test(ua)) && !/iphone/.test(ua);
-    const locationNote = isIpad ? "أعلى شاشة المتصفح" : "أسفل شاشة المتصفح";
+  // 2. نافذة الشرح التفاعلية لأجهزة آبل
+  function showAppleGuideModal() {
+    const isIpadScreen = window.innerWidth >= 600;
+    const locationText = isIpadScreen ? "أعلى شاشة المتصفح" : "أسفل شاشة المتصفح";
 
     const modal = document.createElement("div");
-    modal.id = "iosInstallModal";
+    modal.id = "appleInstallModal";
     modal.style.cssText = `
       position: fixed;
       inset: 0;
-      background: rgba(14, 23, 48, 0.7);
-      backdrop-filter: blur(6px);
-      z-index: 100000;
+      background: rgba(14, 23, 48, 0.75);
+      backdrop-filter: blur(8px);
+      z-index: 1000000;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 18px;
+      padding: 16px;
       direction: rtl;
       font-family: inherit;
     `;
 
     modal.innerHTML = `
-      <div style="background: #ffffff; border-radius: 22px; max-width: 420px; width: 100%; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.25); text-align: center;">
+      <div style="background: #ffffff; border-radius: 24px; max-width: 420px; width: 100%; padding: 24px; box-shadow: 0 25px 50px rgba(0,0,0,0.3); text-align: center;">
         <div style="width: 52px; height: 52px; background: #eef2fa; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto;">
           <img src="assets/logo/logo.png" style="width: 36px; height: 36px; object-fit: contain; border-radius: 8px;">
         </div>
         <h3 style="margin: 0 0 6px 0; font-size: 1.15rem; color: #0e1730; font-weight: 800;">تثبيت التطبيق على جهازك</h3>
-        <p style="font-size: 0.82rem; color: #64748b; margin: 0 0 16px 0;">اتبع هذه الخطوات البسيطة في متصفح <strong>Safari</strong>:</p>
+        <p style="font-size: 0.82rem; color: #64748b; margin: 0 0 16px 0;">اتبع الخطوات البسيطة التالية في متصفحك:</p>
 
         <div style="display: flex; flex-direction: column; gap: 10px; text-align: right; margin-bottom: 20px;">
           <div style="display: flex; align-items: center; gap: 12px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px 14px; border-radius: 12px;">
@@ -514,7 +508,7 @@ function initInstallPrompt() {
               <span style="display: inline-block; vertical-align: middle; margin: 0 3px; background: #e2e8f0; padding: 2px 6px; border-radius: 6px;">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1d2f57" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
               </span> 
-              في (${locationNote})
+              في (<strong>${locationText}</strong>)
             </div>
           </div>
 
@@ -532,7 +526,7 @@ function initInstallPrompt() {
           </div>
         </div>
 
-        <button id="closeIosGuideModal" style="width: 100%; background: #1d2f57; color: #fff; border: none; padding: 11px; border-radius: 12px; font-weight: 700; font-size: 0.92rem; cursor: pointer;">
+        <button id="closeAppleModal" style="width: 100%; background: #1d2f57; color: #fff; border: none; padding: 11px; border-radius: 12px; font-weight: 700; font-size: 0.92rem; cursor: pointer;">
           فهمت ذلك
         </button>
       </div>
@@ -540,7 +534,7 @@ function initInstallPrompt() {
 
     document.body.appendChild(modal);
 
-    document.getElementById("closeIosGuideModal").onclick = () => {
+    document.getElementById("closeAppleModal").onclick = () => {
       modal.remove();
       dismissBanner();
     };
@@ -553,11 +547,15 @@ function initInstallPrompt() {
     };
   }
 
-  // 1. نظام Android (Chrome)
+  // التعامل مع أجهزة أندرويد
   window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();
     deferredPrompt = e;
-    document.body.appendChild(banner);
+    isAndroidPromptReady = true;
+
+    if (!document.getElementById("pwaInstallBanner")) {
+      document.body.appendChild(banner);
+    }
 
     document.getElementById("pwaInstallBtn").onclick = async () => {
       banner.remove();
@@ -572,15 +570,24 @@ function initInstallPrompt() {
     document.getElementById("pwaCloseBtn").onclick = dismissBanner;
   });
 
-  // 2. نظام Apple (iPadOS و iOS على Safari)
-  if (isAppleTouch && !isStandalone) {
-    setTimeout(() => {
-      // التأكد من عدم إضافة الشريط مرتين
-      if (!document.getElementById("pwaInstallBanner")) {
-        document.body.appendChild(banner);
-        document.getElementById("pwaInstallBtn").onclick = showIosGuideModal;
-        document.getElementById("pwaCloseBtn").onclick = dismissBanner;
-      }
-    }, 1200);
-  }
+  // التعامل مع أجهزة Apple والمتصفحات الأخرى
+  setTimeout(() => {
+    // إذا لم يكن أندرويد قد أطلق نافذته، والشريط غير معروض بعد
+    if (!isAndroidPromptReady && !document.getElementById("pwaInstallBanner")) {
+      document.body.appendChild(banner);
+
+      document.getElementById("pwaInstallBtn").onclick = () => {
+        showAppleGuideModal();
+      };
+
+      document.getElementById("pwaCloseBtn").onclick = dismissBanner;
+    }
+  }, 1200);
+}
+
+// تشغيل الفحص فوراً بمجرد جاهزية الصفحة
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initInstallPrompt);
+} else {
+  initInstallPrompt();
 }
