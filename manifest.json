@@ -1,0 +1,23 @@
+{
+  "name": "اسم المتجر الإلكتروني",
+  "short_name": "المتجر",
+  "description": "متجرنا الإلكتروني للتسوق السريع",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1d2f57",
+  "dir": "rtl",
+  "lang": "ar",
+  "icons": [
+    {
+      "src": "assets/logo/logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/logo/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
