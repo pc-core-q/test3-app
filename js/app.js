@@ -413,19 +413,19 @@ document.addEventListener("store:synced", function () {
   renderFooter();
   window.updateCartBadge();
 });
-// منطق شريط تثبيت التطبيق (PWA Install Prompt)
+// منطق شريط تثبيت التطبيق المحدث (يدعم أندرويد والآيفون والآيباد)
 function initInstallPrompt() {
-  // لا تعرضه إذا قام الزائر بإغلاقه مسبقاً
   if (localStorage.getItem("dismiss_install_banner")) return;
 
   let deferredPrompt = null;
-  const isIos = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+  const ua = window.navigator.userAgent.toLowerCase();
+  
+  // كشف دقيق لأجهزة آبل (يشمل iPadOS الذي يتنكر كجهاز Mac)
+  const isIos = /iphone|ipad|ipod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
 
-  // إذا كان التطبيق مثبتاً ويعمل بالفعل، لا تظهر الإشعار
   if (isStandalone) return;
 
-  // إنشاء واجهة الشريط برمجياً
   const banner = document.createElement("div");
   banner.id = "pwaInstallBanner";
   banner.style.cssText = `
@@ -433,11 +433,11 @@ function initInstallPrompt() {
     bottom: 20px;
     left: 20px;
     right: 20px;
-    max-width: 450px;
+    max-width: 460px;
     margin: 0 auto;
     background: #ffffff;
     border: 1px solid #e2e8f0;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.18);
     border-radius: 16px;
     padding: 14px 18px;
     display: flex;
@@ -454,7 +454,7 @@ function initInstallPrompt() {
       <img src="assets/logo/logo.png" style="width: 44px; height: 44px; border-radius: 10px; object-fit: contain;" alt="شعار">
       <div>
         <div style="font-weight: 700; font-size: 14px; color: #1e293b;">تطبيق المتجر</div>
-        <div style="font-size: 12px; color: #64748b;">تصفح أسرع وإشعارات بجديد العروض</div>
+        <div style="font-size: 12px; color: #64748b;">تصفح أسرع وتجربة تطبيق متكاملة</div>
       </div>
     </div>
     <div style="display: flex; align-items: center; gap: 8px;">
@@ -467,13 +467,12 @@ function initInstallPrompt() {
     </div>
   `;
 
-  // عند الإغلاق: لا تظهره لنفس الزبون لمدة أسبوع
   function dismissBanner() {
     banner.remove();
     localStorage.setItem("dismiss_install_banner", Date.now());
   }
 
-  // 1. نظام أندرويد / Chrome
+  // 1. نظام أندرويد (Chrome / Edge)
   window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();
     deferredPrompt = e;
@@ -492,24 +491,16 @@ function initInstallPrompt() {
     document.getElementById("pwaCloseBtn").onclick = dismissBanner;
   });
 
-  // 2. نظام آيفون / Safari
+  // 2. نظام آبل (iOS و iPadOS عبر Safari)
   if (isIos && !isStandalone) {
-    // إظهاره بعد 3 ثوانٍ من التصفح
     setTimeout(() => {
       document.body.appendChild(banner);
+
       document.getElementById("pwaInstallBtn").onclick = () => {
-        alert("لتثبيت التطبيق على الآيفون:\n1. اضغط على زر المشاركة (Share) أسفل المتصفح.\n2. اختر 'إضافة إلى الشاشة الرئيسية' (Add to Home Screen).");
+        alert("لتثبيت التطبيق على جهاز الآيباد / الآيفون:\n\n1. اضغط على أيقونة المشاركة (Share) ⎋ في متصفح Safari (أعلى الشاشة في الآيباد أو أسفلها في الآيفون).\n2. مرر للأسفل واختر 'إضافة إلى الشاشة الرئيسية' (Add to Home Screen ⊞).\n3. اضغط 'إضافة' (Add).");
       };
+
       document.getElementById("pwaCloseBtn").onclick = dismissBanner;
-    }, 3000);
+    }, 2000);
   }
 }
-
-// تشغيل الفحص عند اكتمال الصفحة
-window.addEventListener("DOMContentLoaded", () => {
-  // تسجيل الـ Service Worker
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("/sw.js").catch(console.error);
-  }
-  initInstallPrompt();
-});
