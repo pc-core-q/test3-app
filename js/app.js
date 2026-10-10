@@ -413,19 +413,20 @@ document.addEventListener("store:synced", function () {
   renderFooter();
   window.updateCartBadge();
 });
-// منطق شريط تثبيت التطبيق المحدث (يدعم أندرويد والآيفون والآيباد)
+// منطق شريط التثبيت مع نافذة إرشادية مرئية لأجهزة آبل
 function initInstallPrompt() {
   if (localStorage.getItem("dismiss_install_banner")) return;
 
   let deferredPrompt = null;
   const ua = window.navigator.userAgent.toLowerCase();
   
-  // كشف دقيق لأجهزة آبل (يشمل iPadOS الذي يتنكر كجهاز Mac)
+  // كشف أجهزة iOS و iPadOS بدقة
   const isIos = /iphone|ipad|ipod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
 
   if (isStandalone) return;
 
+  // 1. إنشاء شريط الإشعار السفلي
   const banner = document.createElement("div");
   banner.id = "pwaInstallBanner";
   banner.style.cssText = `
@@ -439,7 +440,7 @@ function initInstallPrompt() {
     border: 1px solid #e2e8f0;
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.18);
     border-radius: 16px;
-    padding: 14px 18px;
+    padding: 12px 16px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -451,14 +452,14 @@ function initInstallPrompt() {
 
   banner.innerHTML = `
     <div style="display: flex; align-items: center; gap: 12px;">
-      <img src="assets/logo/logo.png" style="width: 44px; height: 44px; border-radius: 10px; object-fit: contain;" alt="شعار">
+      <img src="assets/logo/logo.png" style="width: 42px; height: 42px; border-radius: 10px; object-fit: contain;" alt="شعار">
       <div>
         <div style="font-weight: 700; font-size: 14px; color: #1e293b;">تطبيق المتجر</div>
-        <div style="font-size: 12px; color: #64748b;">تصفح أسرع وتجربة تطبيق متكاملة</div>
+        <div style="font-size: 12px; color: #64748b;">تصفح أسرع وتجربة تطبيق سلسة</div>
       </div>
     </div>
     <div style="display: flex; align-items: center; gap: 8px;">
-      <button id="pwaInstallBtn" style="background: #1d2f57; color: #fff; border: none; padding: 8px 16px; border-radius: 10px; font-weight: 600; font-size: 13px; cursor: pointer;">
+      <button id="pwaInstallBtn" style="background: #1d2f57; color: #fff; border: none; padding: 8px 16px; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer;">
         تحميل
       </button>
       <button id="pwaCloseBtn" style="background: transparent; border: none; color: #94a3b8; font-size: 20px; cursor: pointer; line-height: 1;">
@@ -472,7 +473,83 @@ function initInstallPrompt() {
     localStorage.setItem("dismiss_install_banner", Date.now());
   }
 
-  // 1. نظام أندرويد (Chrome / Edge)
+  // 2. دالة إظهار النافذة الإرشادية لآبل
+  function showIosGuideModal() {
+    const isIpad = navigator.maxTouchPoints > 1 && !/iphone/.test(ua);
+    const locationNote = isIpad ? "أعلى شاشة المتصفح" : "أسفل شاشة المتصفح";
+
+    const modal = document.createElement("div");
+    modal.id = "iosInstallModal";
+    modal.style.cssText = `
+      position: fixed;
+      inset: 0;
+      background: rgba(14, 23, 48, 0.7);
+      backdrop-filter: blur(6px);
+      z-index: 100000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      direction: rtl;
+      font-family: inherit;
+    `;
+
+    modal.innerHTML = `
+      <div style="background: #ffffff; border-radius: 22px; max-width: 420px; width: 100%; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.25); text-align: center;">
+        <div style="width: 54px; height: 54px; background: #eef2fa; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px auto;">
+          <img src="assets/logo/logo.png" style="width: 38px; height: 38px; object-fit: contain; border-radius: 8px;">
+        </div>
+        <h3 style="margin: 0 0 6px 0; font-size: 1.15rem; color: #0e1730; font-weight: 800;">تثبيت التطبيق على جهازك</h3>
+        <p style="font-size: 0.82rem; color: #64748b; margin: 0 0 18px 0;">اتبع هذه الخطوات البسيطة في متصفح <strong>Safari</strong>:</p>
+
+        <div style="display: flex; flex-direction: column; gap: 10px; text-align: right; margin-bottom: 22px;">
+          <div style="display: flex; align-items: center; gap: 12px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px 14px; border-radius: 14px;">
+            <div style="width: 32px; height: 32px; border-radius: 50%; background: #1d2f57; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem; flex-shrink: 0;">1</div>
+            <div style="font-size: 0.85rem; color: #334155;">
+              اضغط على زر المشاركة 
+              <span style="display: inline-block; vertical-align: middle; margin: 0 4px; background: #e2e8f0; padding: 2px 6px; border-radius: 6px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1d2f57" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+              </span> 
+              في (${locationNote})
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 12px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px 14px; border-radius: 14px;">
+            <div style="width: 32px; height: 32px; border-radius: 50%; background: #1d2f57; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem; flex-shrink: 0;">2</div>
+            <div style="font-size: 0.85rem; color: #334155;">
+              مرر القائمة واختر <strong>"إضافة إلى الشاشة الرئيسية"</strong> 
+              <span style="display: inline-block; vertical-align: middle; margin-right: 4px; background: #e2e8f0; padding: 2px 6px; border-radius: 6px; font-weight: bold;">⊞</span>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 12px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px 14px; border-radius: 14px;">
+            <div style="width: 32px; height: 32px; border-radius: 50%; background: #1d2f57; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem; flex-shrink: 0;">3</div>
+            <div style="font-size: 0.85rem; color: #334155;">اضغط على <strong>"إضافة" (Add)</strong> في الزاوية العلوية</div>
+          </div>
+        </div>
+
+        <button id="closeIosGuideModal" style="width: 100%; background: #1d2f57; color: #fff; border: none; padding: 11px; border-radius: 12px; font-weight: 700; font-size: 0.92rem; cursor: pointer;">
+          فهمت ذلك
+        </button>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    document.getElementById("closeIosGuideModal").onclick = () => {
+      modal.remove();
+      dismissBanner();
+    };
+
+    modal.onclick = (e) => {
+      if (e.target === modal) {
+        modal.remove();
+        dismissBanner();
+      }
+    };
+  }
+
+  // A. نظام أندرويد: يفتح التثبيت الرسمي التلقائي
   window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();
     deferredPrompt = e;
@@ -491,16 +568,14 @@ function initInstallPrompt() {
     document.getElementById("pwaCloseBtn").onclick = dismissBanner;
   });
 
-  // 2. نظام آبل (iOS و iPadOS عبر Safari)
+  // B. نظام آبل (آيباد وآيفون): يظهر الشريط، وعند الضغط على "تحميل" يفتح النافذة الإرشادية
   if (isIos && !isStandalone) {
     setTimeout(() => {
       document.body.appendChild(banner);
-
       document.getElementById("pwaInstallBtn").onclick = () => {
-        alert("لتثبيت التطبيق على جهاز الآيباد / الآيفون:\n\n1. اضغط على أيقونة المشاركة (Share) ⎋ في متصفح Safari (أعلى الشاشة في الآيباد أو أسفلها في الآيفون).\n2. مرر للأسفل واختر 'إضافة إلى الشاشة الرئيسية' (Add to Home Screen ⊞).\n3. اضغط 'إضافة' (Add).");
+        showIosGuideModal();
       };
-
       document.getElementById("pwaCloseBtn").onclick = dismissBanner;
-    }, 2000);
+    }, 1500);
   }
 }
