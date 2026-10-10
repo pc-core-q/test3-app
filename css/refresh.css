@@ -902,3 +902,95 @@ body:has(#detailActions) #backToTopBtn {
 .icon-choice input{position:absolute;opacity:0;pointer-events:none}
 .icon-choice svg{width:20px;height:20px}
 .icon-choice:hover{border-color:var(--olive-400)}
+/* ===================================================
+   تنسيق الفوتر المضغوط لشاشات الجوال (Compact Mobile Footer)
+   =================================================== */
+@media (max-width: 768px) {
+  /* تقليل المساحات الفارغة العلوية والسفلية للفوتر */
+  #site-footer,
+  .site-footer {
+    padding-top: 1.5rem !important;
+    padding-bottom: 5rem !important; /* مساحة مناسبة حتى لا يغطي زر العودة للأعلى على النصوص */
+  }
+
+  /* الحاوية الرئيسية لأعمدة الفوتر */
+  #site-footer .footer-grid,
+  .site-footer .footer-grid,
+  #site-footer .footer-content {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important; /* عمودان متجاوران بدلاً من عمود واحد */
+    gap: 1.25rem 1rem !important;
+  }
+
+  /* قسم الشعار والوصف: يمتد على كامل العرض في الأعلى بشكل مختصر */
+  #site-footer .footer-brand,
+  .site-footer .footer-brand,
+  #site-footer .footer-col:first-child {
+    grid-column: 1 / -1 !important;
+    margin-bottom: 0.25rem !important;
+    text-align: center;
+  }
+
+  #site-footer .footer-brand img,
+  .site-footer .footer-brand img {
+    margin: 0 auto 0.5rem auto !important;
+    max-height: 48px !important;
+  }
+
+  #site-footer .footer-brand p,
+  .site-footer .footer-brand p {
+    font-size: 0.85rem !important;
+    margin: 0.25rem 0 0 0 !important;
+    opacity: 0.8;
+  }
+
+  /* عناوين القوائم (روابط سريعة / الأقسام / تواصل معنا) */
+  #site-footer h3,
+  #site-footer h4,
+  .site-footer h3,
+  .site-footer h4,
+  .footer-col-title {
+    font-size: 0.95rem !important;
+    margin-bottom: 0.6rem !important;
+    padding-bottom: 0.3rem !important;
+  }
+
+  /* روابط القوائم وتقليل تباعد الأسطر */
+  #site-footer ul,
+  .site-footer ul {
+    gap: 0.4rem !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  #site-footer ul li a,
+  .site-footer ul li a {
+    font-size: 0.82rem !important;
+    padding: 0.15rem 0 !important;
+    display: block;
+    line-height: 1.4;
+  }
+
+  /* قسم "تواصل معنا": يمتد على كامل العرض بالأسفل بترتيب أفقي مضغوط */
+  #site-footer .footer-col:last-child,
+  .site-footer .footer-col:last-child {
+    grid-column: 1 / -1 !important;
+    margin-top: 0.5rem !important;
+    padding-top: 0.75rem !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  /* جعل معلومات التواصل تظهر بشكل شارات أو أسطر مدمجة */
+  #site-footer .footer-col:last-child ul,
+  .site-footer .footer-col:last-child ul {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.5rem 1rem !important;
+    justify-content: flex-start;
+  }
+
+  #site-footer .footer-col:last-child ul li,
+  .site-footer .footer-col:last-child ul li {
+    font-size: 0.82rem !important;
+  }
+}
